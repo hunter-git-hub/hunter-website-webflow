@@ -418,37 +418,10 @@
 
       removeTyping();
 
-      if (!res.ok) throw new Error('Request failed');
-
-      const bubble = addMessage('assistant', '');
-      let fullText = '';
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') continue;
-          try {
-            const json = JSON.parse(data);
-            if (json.type === 'content_block_delta' && json.delta?.text) {
-              fullText += json.delta.text;
-              bubble.textContent = fullText;
-              messagesEl.scrollTop = messagesEl.scrollHeight;
-            }
-          } catch {}
-        }
-      }
-
-      history.push({ role: 'assistant', content: fullText });
+      const data = await res.json();
+      const text = data.text || 'Sorry, no response received.';
+      addMessage('assistant', text);
+      history.push({ role: 'assistant', content: text });
 
     } catch (err) {
       removeTyping();
